@@ -1,0 +1,7 @@
+{
+  "name": "TaskFlow",
+  "description": "A clean, secure task management web application with Google Authentication and Firestore persistence.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

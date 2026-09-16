@@ -1,0 +1,52 @@
+{
+  "entities": {
+    "Task": {
+      "title": "Task",
+      "description": "A single private task item created by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique Firestore document ID."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase UID of the task owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Required title of the task.",
+          "minLength": 1,
+          "maxLength": 150
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional details or context for the task.",
+          "maxLength": 1000
+        },
+        "status": {
+          "type": "string",
+          "description": "Current lifecycle status of the task.",
+          "enum": ["Planned", "In Progress", "Complete"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": ["userId", "title", "status", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Collection of tasks stored per document with userId ownership checks."
+    }
+  }
+}

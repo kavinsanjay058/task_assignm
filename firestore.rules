@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidStatus(status) {
+      return status in ['Planned', 'In Progress', 'Complete'];
+    }
+
+    function isValidTaskPayload(data) {
+      return data.keys().hasAll(['userId', 'title', 'description', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 6
+        && data.userId is string
+        && data.userId == request.auth.uid
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 150
+        && data.description is string
+        && data.description.size() <= 1000
+        && isValidStatus(data.status);
+    }
+
+    // Tasks collection
+    match /tasks/{taskId} {
+      // Allow reading single document if user owns the task
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+
+      // Allow listing tasks belonging strictly to the authenticated user
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Allow creating a new task:
+      // - Must belong to current user
+      // - New tasks start with status "Planned"
+      // - Strict timestamps
+      allow create: if isSignedIn()
+        && isValidTaskPayload(incoming())
+        && incoming().status == 'Planned'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      // Allow updating task status:
+      // - Must belong to current user
+      // - Immutable userId and createdAt
+      // - Valid target status
+      // - Updated timestamp
+      allow update: if isSignedIn()
+        && existing().userId == request.auth.uid
+        && isValidTaskPayload(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().title == existing().title
+        && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && incoming().updatedAt == request.time;
+
+      // Deletion is not required by assessment specification
+      allow delete: if false;
+    }
+  }
+}
